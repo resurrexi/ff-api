@@ -7,10 +7,12 @@ import aiofiles
 from fastapi import FastAPI, File, UploadFile, Query, status
 from fastapi.responses import FileResponse, JSONResponse
 
+from app.utils import clean_path
+
 # Set a working path that the API can work on. This is for security
 # reasons as allowing any path can run the risk of breaking FastAPI
 # or the system.
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 API_FILE_DIR = os.path.join(BASE_DIR, "files")
 # Set chunksize for writing to files when uploading
 CHUNKSIZE = 1024
@@ -42,14 +44,16 @@ async def main():
 @app.get("/file/{local_path:path}")
 async def get_path(
     local_path: str,
-    order_by: Optional[OrderByEnum] = Query(None, alias="orderBy"),
+    order_by: Optional[OrderByEnum] = Query(
+        OrderByEnum.LAST_MOD, alias="orderBy"
+    ),
     order_direction: Optional[OrderByDirection] = Query(
-        None, alias="orderByDirection"
+        OrderByDirection.DSC, alias="orderByDirection"
     ),
     filter_name: Optional[str] = Query(None, alias="filterByName"),
 ):
     """Retrieve target path."""
-    abs_path = os.path.join(API_FILE_DIR, local_path)
+    abs_path = os.path.join(API_FILE_DIR, clean_path(local_path))
 
     if os.path.exists(abs_path):
         if os.path.isdir(abs_path):
@@ -90,7 +94,7 @@ async def get_path(
 @app.post("/file/{local_path:path}")
 async def upload_file(local_path: str, file: UploadFile = File(...)):
     """Upload file to target path."""
-    abs_path = os.path.join(API_FILE_DIR, local_path)
+    abs_path = os.path.join(API_FILE_DIR, clean_path(local_path))
 
     if os.path.exists(abs_path):
         return JSONResponse(
@@ -120,7 +124,7 @@ async def upload_file(local_path: str, file: UploadFile = File(...)):
 @app.patch("/file/{local_path:path}")
 async def update_file(local_path: str, file: UploadFile = File(...)):
     """Update file at target path with uploaded file."""
-    abs_path = os.path.join(API_FILE_DIR, local_path)
+    abs_path = os.path.join(API_FILE_DIR, clean_path(local_path))
 
     if not os.path.exists(abs_path):
         return JSONResponse(
@@ -144,7 +148,7 @@ async def update_file(local_path: str, file: UploadFile = File(...)):
 @app.delete("/file/{local_path:path}")
 async def delete_file(local_path: str):
     """Delete file at target path."""
-    abs_path = os.path.join(API_FILE_DIR, local_path)
+    abs_path = os.path.join(API_FILE_DIR, clean_path(local_path))
 
     try:
         os.remove(abs_path)
