@@ -14,6 +14,7 @@ python-multipart = "^0.0.5"
 black = "^21.11b1"
 pylint = "^2.12.1"
 flake8 = "^4.0.1"
+pytest = "^6.2.5"
 
 [tool.black]
 line-length = 79
