@@ -100,3 +100,76 @@ def test_get_directory_filter_by_name_nonexistent():
     response = client.get("/file/docs?filterByName=nonexistent")
     assert response.status_code == status.HTTP_200_OK
     assert response.json() == {"isDirectory": True, "files": []}
+
+
+def test_upload_file_is_success_if_path_is_new(test_directory):
+    """Should return 201."""
+    response = client.post(
+        "/file/docs/uploaded.txt",
+        files={"file": ("filename", b"uploaded file")},
+    )
+    assert response.status_code == status.HTTP_201_CREATED
+    assert "File has been uploaded" in response.json()["message"]
+
+    # ensure uploaded file is in the target directory
+    assert "uploaded.txt" in os.listdir(os.path.join(test_directory, "docs"))
+
+
+def test_upload_file_is_forbidden_if_path_exists():
+    """Should return 403."""
+    response = client.post(
+        "/file/docs/doc1.txt",
+        files={"file": ("filename", b"uploaded file")},
+    )
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json() == {"message": "File already exists"}
+
+
+def test_update_file_is_success_if_file_exists(test_directory):
+    """Should return 200."""
+    response = client.patch(
+        "/file/docs/doc1.txt",
+        files={"file": ("filename", b"uploaded file")},
+    )
+    assert response.status_code == status.HTTP_200_OK
+    assert "has been updated" in response.json()["message"]
+
+    # ensure updated file has new contents
+    with open(
+        os.path.join(test_directory, "docs", "doc1.txt"), "rb"
+    ) as file_r:
+        assert b"uploaded file" in file_r.read()
+
+
+def test_update_file_is_not_found_if_file_not_exists():
+    """Should return 404."""
+    response = client.patch(
+        "/file/docs/does_not_exist.txt",
+        files={"file": ("filename", b"uploaded file")},
+    )
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json() == {"message": "File does not exist"}
+
+
+def test_delete_file_success_if_is_file_and_exists(test_directory):
+    """Should return 200."""
+    response = client.delete("/file/docs/newdoc.txt")
+    assert response.status_code == status.HTTP_200_OK
+    assert "has been deleted" in response.json()["message"]
+
+    # ensure file no longer exists in target directory
+    assert "newdoc.txt" not in os.listdir(os.path.join(test_directory, "docs"))
+
+
+def test_delete_file_is_not_found_if_file_not_exists():
+    """Should return 404."""
+    response = client.delete("/file/docs/does_not_exist.txt")
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json() == {"message": "File does not exist"}
+
+
+def test_delete_file_is_forbidden_if_path_is_directory():
+    """Should return 403."""
+    response = client.delete("/file/docs")
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json() == {"message": "Not a file"}
