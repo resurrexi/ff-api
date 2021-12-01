@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "ff-api"
+version = "0.1.0"
+description = "FastFiles API"
+authors = ["Liquan Yang <yang.liquan87@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.7"
+fastapi = {extras = ["all"], version = "^0.70.0"}
+aiofiles = "^0.8.0"
+python-multipart = "^0.0.5"
+
+[tool.poetry.dev-dependencies]
+black = "^21.11b1"
+pylint = "^2.12.1"
+flake8 = "^4.0.1"
+
+[tool.black]
+line-length = 79
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
